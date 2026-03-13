@@ -1,43 +1,41 @@
 import {
   defineWebApplication,
-  ApplicationSetupOptions,
   Extension,
   AppMenuItemExtension
 } from '@opencloud-eu/web-pkg'
 import { urlJoin } from '@opencloud-eu/web-client'
 import '@opencloud-eu/extension-sdk/tailwind.css'
-import { RouteRecordRaw } from 'vue-router'
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 
 export default defineWebApplication({
-  setup(args) {
+  setup() {
     const { $gettext } = useGettext()
 
     const appInfo = {
-      id: 'skeleton',
-      name: $gettext('Skeleton'),
-      icon: 'cup',
-      color: '#622a0f'
+      id: 'dedupe',
+      name: $gettext('Dedupe'),
+      icon: 'file-copy-2',
+      color: '#0f5f7a'
     }
 
-    const routes: RouteRecordRaw[] = [
+    const routes: any[] = [
       {
         path: '/',
-        redirect: `/${appInfo.id}/hello`
+        redirect: `/${appInfo.id}/scan`
       },
       {
-        path: '/hello',
-        name: 'hello',
-        component: () => import('./views/Hello.vue'),
+        path: '/scan',
+        name: 'scan',
+        component: () => import('./views/Dedupe.vue'),
         meta: {
           authContext: 'user',
-          title: $gettext('Hello')
+          title: $gettext('Dedupe')
         }
       }
     ]
 
-    const extensions = ({ applicationConfig }: ApplicationSetupOptions) => {
+    const extensions = () => {
       return computed<Extension[]>(() => {
         const menuItems: AppMenuItemExtension[] = [
           {
@@ -57,7 +55,7 @@ export default defineWebApplication({
     return {
       appInfo,
       routes,
-      extensions: extensions(args)
+      extensions: extensions()
     }
   }
 })

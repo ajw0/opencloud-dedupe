@@ -1,11 +1,11 @@
 {
-  "name": "web-app-skeleton",
-  "version": "1.1.0",
-  "description": "All the bits and pieces for an easy start to build your own web apps and extensions for OpenCloud.",
+  "name": "web-app-dedupe",
+  "version": "1.0",
+  "description": "OpenCloud app to find duplicate files by checksum and delete selected copies.",
   "license": "Apache-2.0",
-  "author": "OpenCloud",
+  "author": "ajw0",
   "private": true,
-  "homepage": "https://github.com/opencloud-eu/web-app-skeleton",
+  "homepage": "https://github.com/ajw0/opencloud-dedupe",
   "type": "module",
   "scripts": {
     "build": "pnpm vite build",

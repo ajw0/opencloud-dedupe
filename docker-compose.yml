@@ -21,15 +21,24 @@ services:
       traefik.http.routers.opencloud.entrypoints: opencloud
       traefik.http.services.opencloud.loadbalancer.server.port: 9200
       traefik.http.routers.opencloud.middlewares: cors
+      traefik.http.routers.opencloud-app-assets.tls: true
+      traefik.http.routers.opencloud-app-assets.entrypoints: opencloud
+      traefik.http.routers.opencloud-app-assets.rule: Host(`host.docker.internal`) && PathPrefix(`/assets/apps/`)
+      traefik.http.routers.opencloud-app-assets.priority: 200
+      traefik.http.routers.opencloud-app-assets.service: opencloud
+      traefik.http.routers.opencloud-app-assets.middlewares: cors,opencloud-app-assets-no-cache
+      traefik.http.middlewares.opencloud-app-assets-no-cache.headers.customResponseHeaders.Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+      traefik.http.middlewares.opencloud-app-assets-no-cache.headers.customResponseHeaders.Pragma: no-cache
+      traefik.http.middlewares.opencloud-app-assets-no-cache.headers.customResponseHeaders.Expires: 0
     volumes:
       - opencloud-config:/etc/opencloud
       - ./dev/docker/opencloud/apps.yaml:/etc/opencloud/apps.yaml
-      - ./dist:/web/apps/skeleton
+      - ./dist:/web/apps/dedupe
     depends_on:
       - traefik
 
   traefik:
-    image: traefik:v3.5.3
+    image: traefik:v3.6.9
     networks:
       opencloud-net:
         aliases:
