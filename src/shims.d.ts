@@ -1,5 +1,4 @@
-declare module 'vue3-gettext'
-declare module '@opencloud-eu/extension-sdk'
+declare module '*.css'
 
 interface ImportMetaEnv {
   readonly MODE: string
