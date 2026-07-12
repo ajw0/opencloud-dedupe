@@ -30,6 +30,20 @@ const {
   deleteDuplicates
 } = useDedupeScanner()
 
+const formatFileSize = (bytes: number | string | undefined): string => {
+  if (bytes === undefined || bytes === null) return '—'
+  const numBytes = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes
+  if (isNaN(numBytes)) return '—'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = numBytes
+  let unitIndex = 0
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024
+    unitIndex++
+  }
+  return `${unitIndex === 0 ? size : size.toFixed(1)} ${units[unitIndex]}`
+}
+
 const selectedEntries = ref<Record<string, boolean>>({})
 
 const selectedIds = computed(() => {
@@ -186,11 +200,11 @@ const setEntrySelection = (entryId: string, value: boolean) => {
 
       <section class="dedupe-soft-border bg-role-surface ext:rounded-lg ext:p-4 ext:space-y-3 ext:shadow-sm">
       <div class="ext:flex ext:flex-wrap ext:gap-2">
-        <oc-button appearance="filled" :disabled="isScanning" @click="startScan">
+        <oc-button appearance="filled" :disabled="isScanning || isDeleting" @click="startScan">
           <span>{{ $gettext('Scan') }}</span>
         </oc-button>
 
-        <oc-button appearance="outline" :disabled="!isScanning" @click="stopScan">
+        <oc-button appearance="outline" :disabled="!isScanning || isStopping" @click="stopScan">
           <span>{{ $gettext('Stop') }}</span>
         </oc-button>
 
@@ -199,9 +213,9 @@ const setEntrySelection = (entryId: string, value: boolean) => {
         </oc-button>
       </div>
 
-      <oc-progress v-if="isScanning" :indeterminate="true" />
+      <oc-progress v-if="isScanning" :indeterminate="true" :aria-label="$gettext('Scanning')" />
 
-      <div class="ext:grid ext:grid-cols-2 md:ext:grid-cols-5 ext:gap-3 ext:text-sm">
+      <div class="ext:grid ext:grid-cols-2 md:ext:grid-cols-5 ext:gap-3 ext:text-sm" aria-live="polite">
         <div>
           <p class="text-role-on-surface-variant">{{ $gettext('Spaces scanned') }}</p>
           <p class="ext:font-medium">{{ scannedSpaces }}</p>
@@ -256,11 +270,11 @@ const setEntrySelection = (entryId: string, value: boolean) => {
         <table class="ext:w-full ext:min-w-[720px] ext:text-sm">
           <thead class="dedupe-table-head-surface text-role-on-surface-variant ext:text-left">
             <tr>
-              <th class="ext:px-4 ext:py-2 ext:w-12 ext:font-medium ext:text-center">{{ $gettext('Select') }}</th>
-              <th class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Name') }}</th>
-              <th class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Location') }}</th>
-              <th class="ext:px-4 ext:py-2 ext:w-20 ext:font-medium">{{ $gettext('Size') }}</th>
-              <th class="ext:px-4 ext:py-2 ext:w-28 ext:font-medium ext:text-center">
+              <th scope="col" class="ext:px-4 ext:py-2 ext:w-12 ext:font-medium ext:text-center">{{ $gettext('Select') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Name') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Location') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:w-20 ext:font-medium">{{ $gettext('Size') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:w-28 ext:font-medium ext:text-center">
                 {{ $gettext('Open folder') }}
               </th>
             </tr>
@@ -286,7 +300,7 @@ const setEntrySelection = (entryId: string, value: boolean) => {
                 <span class="text-role-on-surface-variant">{{ entry.space.name }}</span>
                 <code class="ext:text-xs ext:block ext:break-all">{{ entry.resource.path }}</code>
               </td>
-              <td class="ext:px-4 ext:py-2 ext:w-20">{{ entry.resource.size }}</td>
+              <td class="ext:px-4 ext:py-2 ext:w-20">{{ formatFileSize(entry.resource.size) }}</td>
               <td class="ext:px-4 ext:py-2 ext:w-28 ext:text-center">
                 <oc-button
                   type="router-link"

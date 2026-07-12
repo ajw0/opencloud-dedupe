@@ -39,4 +39,27 @@ describe('checksum parsing', () => {
     })
     expect(nonePreferred).toBeNull()
   })
+
+  it('normalizes hyphenated algorithm aliases (SHA-1 -> SHA1)', () => {
+    const parsed = parseChecksums('SHA-1:abc MD-5:def')
+
+    expect(parsed.SHA1).toBe('abc')
+    expect(parsed.MD5).toBe('def')
+    expect(parsed['SHA-1']).toBeUndefined()
+  })
+
+  it('handles empty and invalid inputs', () => {
+    expect(parseChecksums('')).toEqual({})
+    expect(parseChecksums(null)).toEqual({})
+    expect(parseChecksums(undefined)).toEqual({})
+    expect(parseChecksums(123)).toEqual({})
+    expect(pickPreferredChecksum('')).toBeNull()
+    expect(pickPreferredChecksum(null)).toBeNull()
+  })
+
+  it('handles plain string in nested array', () => {
+    const extracted = extractChecksumText(['SHA1:abc', 'MD5:def'])
+
+    expect(extracted).toBe('SHA1:abc MD5:def')
+  })
 })

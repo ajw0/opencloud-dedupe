@@ -66,6 +66,22 @@ export const useDedupeScanner = () => {
     return [space.id, resource.id || resource.fileId || resource.path, resource.path].join(':')
   }
 
+  const buildDuplicatesFromGroupedEntries = (groupedEntries: Map<string, DuplicateFileEntry[]>) => {
+    duplicates.value = [...groupedEntries.entries()]
+      .filter(([, entries]) => entries.length > 1)
+      .map(([groupKey, entries]) => {
+        const { algorithm, checksum } = splitGroupKey(groupKey)
+
+        return {
+          id: groupKey,
+          checksum,
+          checksumAlgorithm: algorithm,
+          files: [...entries].sort((a, b) => a.resource.path.localeCompare(b.resource.path))
+        }
+      })
+      .sort((a, b) => b.files.length - a.files.length)
+  }
+
   const scanSpace = async (
     space: SpaceResource,
     groupedEntries: Map<string, DuplicateFileEntry[]>,
@@ -87,15 +103,24 @@ export const useDedupeScanner = () => {
       visited.add(folderPath)
       scannedFolders.value += 1
 
-      const { children = [] } = await clientService.webdav.listFiles(
-        space,
-        { path: folderPath },
-        {
-          depth: 1,
-          davProperties: [...DavProperties.Default, CHECKSUM_DAV_PROP as any],
-          signal
+      let children: Resource[] = []
+      try {
+        const result = await clientService.webdav.listFiles(
+          space,
+          { path: folderPath },
+          {
+            depth: 1,
+            davProperties: [...DavProperties.Default, CHECKSUM_DAV_PROP as any],
+            signal
+          }
+        )
+        children = result.children || []
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          throw error
         }
-      )
+        continue
+      }
 
       for (const child of children) {
         if (child.type === 'folder') {
@@ -133,7 +158,7 @@ export const useDedupeScanner = () => {
   }
 
   const scan = async () => {
-    if (isScanning.value) {
+    if (isScanning.value || isDeleting.value) {
       return
     }
 
@@ -167,22 +192,11 @@ export const useDedupeScanner = () => {
         await scanSpace(space, groupedEntries, abortController.signal)
       }
 
-      duplicates.value = [...groupedEntries.entries()]
-        .filter(([, entries]) => entries.length > 1)
-        .map(([groupKey, entries]) => {
-          const { algorithm, checksum } = splitGroupKey(groupKey)
-
-          return {
-            id: groupKey,
-            checksum,
-            checksumAlgorithm: algorithm,
-            files: [...entries].sort((a, b) => a.resource.path.localeCompare(b.resource.path))
-          }
-        })
-        .sort((a, b) => b.files.length - a.files.length)
+      buildDuplicatesFromGroupedEntries(groupedEntries)
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
         wasStopped.value = true
+        buildDuplicatesFromGroupedEntries(groupedEntries)
       } else {
         scanError.value = 'scan-error'
       }

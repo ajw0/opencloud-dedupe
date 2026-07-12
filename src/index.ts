@@ -5,6 +5,7 @@ import {
 } from '@opencloud-eu/web-pkg'
 import { urlJoin } from '@opencloud-eu/web-client'
 import '@opencloud-eu/extension-sdk/tailwind.css'
+import type { RouteRecordRaw } from 'vue-router'
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 
@@ -19,7 +20,7 @@ export default defineWebApplication({
       color: '#0f5f7a'
     }
 
-    const routes: any[] = [
+    const routes: RouteRecordRaw[] = [
       {
         path: '/',
         redirect: `/${appInfo.id}/scan`

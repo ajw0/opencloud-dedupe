@@ -14,6 +14,8 @@ Keep these aligned when renaming:
 2. `vite.config.ts` (`defineConfig({ name: ... })`)
 3. `dev/docker/opencloud/apps.yaml` (top-level key)
 4. `docker-compose.yml` mount target (`/web/apps/<app-id>`)
+5. `package.json` (`"name"` field)
+6. `README.md` (title)
 
 ## Core Functionality
 
@@ -56,6 +58,10 @@ Deletion must keep at least one file in each duplicate group.
 - Use extension Tailwind-prefixed classes (`ext:*`) for layout/utilities.
 - Ensure scroll behavior works inside app viewport (root container should be scrollable).
 - Keep copy concise and user-facing strings translatable (`vue3-gettext`).
+
+## Internationalization (i18n)
+
+User-facing strings are wrapped in `$gettext()` calls (translatable-ready). However, the extraction/compile pipeline (`vue-gettext-extract` / `vue-gettext-compile`) is not yet wired into the build. At runtime, `$gettext()` returns the input English string. Wiring the full i18n pipeline is a future task.
 
 ## Development Workflow
 
