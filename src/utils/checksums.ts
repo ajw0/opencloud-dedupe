@@ -28,7 +28,7 @@ export const parseChecksums = (value: unknown): Record<string, string> => {
   const text = extractChecksumText(value)
 
   for (const match of text.matchAll(/([A-Za-z0-9-]+):([^\s]+)/g)) {
-    checksums[match[1].toUpperCase()] = match[2]
+    checksums[match[1].toUpperCase().replace(/-/g, '')] = match[2]
   }
 
   return checksums
