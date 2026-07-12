@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useGettext } from 'vue3-gettext'
-import { createFileRouteOptions, createLocationSpaces, useMessages } from '@opencloud-eu/web-pkg'
+import { createFileRouteOptions, createLocationSpaces, useMessages, useRouter } from '@opencloud-eu/web-pkg'
 import { DuplicateFileEntry, DuplicateGroup, useDedupeScanner } from '../composables/useDedupeScanner'
 
 defineOptions({
@@ -10,6 +10,7 @@ defineOptions({
 
 const { $gettext } = useGettext()
 const messages = useMessages()
+const router = useRouter()
 const buildMarker = import.meta.url.split('/').pop() || 'unknown'
 const showBuildMarker = import.meta.env.MODE === 'development'
 
@@ -86,6 +87,10 @@ const getOpenLocation = (entry: DuplicateFileEntry) => {
       fileId: entry.resource.parentFolderId
     })
   )
+}
+
+const getOpenLocationUrl = (entry: DuplicateFileEntry) => {
+  return router.resolve(getOpenLocation(entry)).fullPath
 }
 
 const pruneSelection = () => {
@@ -179,6 +184,10 @@ const setEntrySelection = (entryId: string, value: boolean) => {
     [entryId]: value
   }
 }
+
+const toggleEntrySelection = (entryId: string) => {
+  setEntrySelection(entryId, !selectedEntries.value[entryId])
+}
 </script>
 
 <template>
@@ -270,14 +279,14 @@ const setEntrySelection = (entryId: string, value: boolean) => {
         <table class="ext:w-full ext:min-w-[720px] ext:table-fixed ext:text-sm">
           <colgroup>
             <col class="ext:w-12" />
-            <col class="ext:w-2/5" />
+            <col class="ext:w-1/4" />
             <col />
             <col class="ext:w-20" />
             <col class="ext:w-28" />
           </colgroup>
           <thead class="dedupe-table-head-surface text-role-on-surface-variant ext:text-left">
             <tr>
-              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium ext:text-center">{{ $gettext('Select') }}</th>
+              <th scope="col" class="ext:pl-4 ext:pr-2 ext:py-2"></th>
               <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Name') }}</th>
               <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Location') }}</th>
               <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Size') }}</th>
@@ -291,30 +300,32 @@ const setEntrySelection = (entryId: string, value: boolean) => {
               v-for="entry in group.files"
               :key="entry.entryId"
               class="dedupe-row ext:border-t dedupe-soft-divider"
+              @click="toggleEntrySelection(entry.entryId)"
             >
-              <td class="ext:px-4 ext:py-2 ext:text-center">
-                <div class="ext:flex ext:justify-center">
-                  <oc-checkbox
-                    :model-value="!!selectedEntries[entry.entryId]"
-                    :label="$gettext('Select duplicate copy')"
-                    label-hidden
-                    @update:model-value="setEntrySelection(entry.entryId, $event)"
-                  />
-                </div>
+              <td class="ext:pl-4 ext:pr-2 ext:py-2">
+                <oc-checkbox
+                  :model-value="!!selectedEntries[entry.entryId]"
+                  :label="$gettext('Select duplicate copy')"
+                  label-hidden
+                  size="large"
+                  @click.stop="toggleEntrySelection(entry.entryId)"
+                />
               </td>
-              <td class="ext:px-4 ext:py-2 ext:font-medium ext:break-words">{{ entry.resource.name }}</td>
+              <td class="ext:px-4 ext:py-2 ext:font-medium ext:break-words"><span @click.stop>{{ entry.resource.name }}</span></td>
               <td class="ext:px-4 ext:py-2">
-                <span class="text-role-on-surface-variant">{{ entry.space.name }}</span>
-                <code class="ext:text-xs ext:block ext:break-all">{{ entry.resource.path }}</code>
+                <span class="text-role-on-surface-variant" @click.stop>{{ entry.space.name }}</span>
+                <code class="ext:text-xs ext:block ext:break-all"><span @click.stop>{{ entry.resource.path }}</span></code>
               </td>
-              <td class="ext:px-4 ext:py-2">{{ formatFileSize(entry.resource.size) }}</td>
+              <td class="ext:px-4 ext:py-2"><span @click.stop>{{ formatFileSize(entry.resource.size) }}</span></td>
               <td class="ext:px-4 ext:py-2 ext:w-28 ext:text-center">
                 <oc-button
-                  type="router-link"
-                  :to="getOpenLocation(entry)"
+                  type="a"
+                  :href="getOpenLocationUrl(entry)"
+                  target="_blank"
                   appearance="raw"
                   :aria-label="$gettext('Open folder')"
                   class="ext:p-1"
+                  @click.stop
                 >
                   <oc-icon name="folder-open" fill-type="line" />
                 </oc-button>
