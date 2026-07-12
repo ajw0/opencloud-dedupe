@@ -267,14 +267,21 @@ const setEntrySelection = (entryId: string, value: boolean) => {
       </header>
 
       <div class="ext:overflow-x-auto">
-        <table class="ext:w-full ext:min-w-[720px] ext:text-sm">
+        <table class="ext:w-full ext:min-w-[720px] ext:table-fixed ext:text-sm">
+          <colgroup>
+            <col class="ext:w-12" />
+            <col class="ext:w-2/5" />
+            <col />
+            <col class="ext:w-20" />
+            <col class="ext:w-28" />
+          </colgroup>
           <thead class="dedupe-table-head-surface text-role-on-surface-variant ext:text-left">
             <tr>
-              <th scope="col" class="ext:px-4 ext:py-2 ext:w-12 ext:font-medium ext:text-center">{{ $gettext('Select') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium ext:text-center">{{ $gettext('Select') }}</th>
               <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Name') }}</th>
               <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Location') }}</th>
-              <th scope="col" class="ext:px-4 ext:py-2 ext:w-20 ext:font-medium">{{ $gettext('Size') }}</th>
-              <th scope="col" class="ext:px-4 ext:py-2 ext:w-28 ext:font-medium ext:text-center">
+              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium">{{ $gettext('Size') }}</th>
+              <th scope="col" class="ext:px-4 ext:py-2 ext:font-medium ext:text-center">
                 {{ $gettext('Open folder') }}
               </th>
             </tr>
@@ -285,7 +292,7 @@ const setEntrySelection = (entryId: string, value: boolean) => {
               :key="entry.entryId"
               class="dedupe-row ext:border-t dedupe-soft-divider"
             >
-              <td class="ext:px-4 ext:py-2 ext:w-12 ext:text-center">
+              <td class="ext:px-4 ext:py-2 ext:text-center">
                 <div class="ext:flex ext:justify-center">
                   <oc-checkbox
                     :model-value="!!selectedEntries[entry.entryId]"
@@ -295,12 +302,12 @@ const setEntrySelection = (entryId: string, value: boolean) => {
                   />
                 </div>
               </td>
-              <td class="ext:px-4 ext:py-2 ext:font-medium">{{ entry.resource.name }}</td>
+              <td class="ext:px-4 ext:py-2 ext:font-medium ext:break-words">{{ entry.resource.name }}</td>
               <td class="ext:px-4 ext:py-2">
                 <span class="text-role-on-surface-variant">{{ entry.space.name }}</span>
                 <code class="ext:text-xs ext:block ext:break-all">{{ entry.resource.path }}</code>
               </td>
-              <td class="ext:px-4 ext:py-2 ext:w-20">{{ formatFileSize(entry.resource.size) }}</td>
+              <td class="ext:px-4 ext:py-2">{{ formatFileSize(entry.resource.size) }}</td>
               <td class="ext:px-4 ext:py-2 ext:w-28 ext:text-center">
                 <oc-button
                   type="router-link"
