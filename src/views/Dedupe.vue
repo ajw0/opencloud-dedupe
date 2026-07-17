@@ -194,7 +194,7 @@ const toggleEntrySelection = (entryId: string) => {
   <main class="ext:h-full ext:overflow-y-auto">
     <div class="ext:p-4 ext:max-w-6xl ext:mx-auto ext:space-y-4 text-role-on-surface">
       <header class="ext:space-y-1">
-      <h1 class="dedupe-title ext:text-2xl ext:font-semibold">{{ $gettext('Dedupe') }}</h1>
+        <h1 class="dedupe-title ext:text-2xl ext:font-semibold">{{ $gettext('Dedupe') }}</h1>
       <p class="ext:text-sm text-role-on-surface-variant">
         {{
           $gettext(
@@ -324,6 +324,7 @@ const toggleEntrySelection = (entryId: string) => {
                   :href="getOpenLocationUrl(entry)"
                   target="_blank"
                   appearance="raw"
+                  no-hover
                   :aria-label="$gettext('Open folder')"
                   class="ext:p-1"
                   @click.stop
@@ -354,7 +355,7 @@ const toggleEntrySelection = (entryId: string) => {
 }
 
 .dedupe-header-surface {
-  background-color: color-mix(in srgb, var(--oc-role-secondary-container) 75%, transparent);
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 25%, transparent);
 }
 
 .dedupe-group-title {
@@ -368,15 +369,16 @@ const toggleEntrySelection = (entryId: string) => {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
-  background-color: var(--oc-role-secondary-container);
-  color: var(--oc-role-on-secondary-container);
+  background-color: transparent;
+  color: var(--oc-role-on-surface-variant);
+  border: 1px solid var(--oc-role-outline-variant, var(--oc-role-outline));
 }
 
 .dedupe-checksum-chip {
   font-size: 0.75rem;
   padding: 0.125rem 0.375rem;
   border-radius: 0.375rem;
-  background-color: var(--oc-role-surface-container);
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 15%, transparent);
 }
 
 .dedupe-table-head-surface {
@@ -388,15 +390,15 @@ const toggleEntrySelection = (entryId: string) => {
 }
 
 .dedupe-row:hover > td {
-  background-color: color-mix(in srgb, var(--oc-role-secondary-container) 40%, transparent);
-}
-
-.dedupe-row-selected > td {
   background-color: color-mix(in srgb, var(--oc-role-primary-container) 25%, transparent);
 }
 
-.dedupe-row-selected:hover > td {
+.dedupe-row-selected > td {
   background-color: color-mix(in srgb, var(--oc-role-primary-container) 35%, transparent);
+}
+
+.dedupe-row-selected:hover > td {
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 45%, transparent);
 }
 
 .dedupe-delete-btn:not(:disabled) {
@@ -405,10 +407,10 @@ const toggleEntrySelection = (entryId: string) => {
 }
 
 :global([data-theme='dark']) .dedupe-row:hover > td {
-  background-color: var(--oc-role-surface-container-highest, var(--oc-role-surface-container-high));
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 20%, transparent);
 }
 
 :global([data-theme='dark']) .dedupe-row-selected > td {
-  background-color: color-mix(in srgb, var(--oc-role-primary-container) 35%, transparent);
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 30%, transparent);
 }
 </style>
