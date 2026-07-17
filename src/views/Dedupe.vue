@@ -194,7 +194,7 @@ const toggleEntrySelection = (entryId: string) => {
   <main class="ext:h-full ext:overflow-y-auto">
     <div class="ext:p-4 ext:max-w-6xl ext:mx-auto ext:space-y-4 text-role-on-surface">
       <header class="ext:space-y-1">
-      <h1 class="ext:text-2xl ext:font-semibold">{{ $gettext('Dedupe') }}</h1>
+        <h1 class="dedupe-title ext:text-2xl ext:font-semibold">{{ $gettext('Dedupe') }}</h1>
       <p class="ext:text-sm text-role-on-surface-variant">
         {{
           $gettext(
@@ -217,33 +217,31 @@ const toggleEntrySelection = (entryId: string) => {
           <span>{{ $gettext('Stop') }}</span>
         </oc-button>
 
-        <oc-button appearance="outline" :disabled="!canDelete || isScanning" @click="removeSelectedDuplicates">
+        <oc-button appearance="outline" class="dedupe-delete-btn" :disabled="!canDelete || isScanning" @click="removeSelectedDuplicates">
           <span>{{ $gettext('Delete selected') }}</span>
         </oc-button>
       </div>
 
       <oc-progress v-if="isScanning" :indeterminate="true" :aria-label="$gettext('Scanning')" />
 
-      <div class="ext:grid ext:grid-cols-2 md:ext:grid-cols-5 ext:gap-3 ext:text-sm" aria-live="polite">
-        <div>
-          <p class="text-role-on-surface-variant">{{ $gettext('Spaces scanned') }}</p>
-          <p class="ext:font-medium">{{ scannedSpaces }}</p>
+      <div
+        v-if="scannedFiles > 0 || isScanning"
+        class="ext:flex ext:flex-col ext:gap-y-1 ext:text-sm text-role-on-surface-variant"
+        aria-live="polite"
+      >
+        <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-x-2">
+          <span class="ext:font-medium">{{ $gettext('Scanned:') }}</span>
+          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedSpaces }}</strong> {{ $gettext('spaces') }}</span>
+          <span class="ext:opacity-40">·</span>
+          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFolders }}</strong> {{ $gettext('folders') }}</span>
+          <span class="ext:opacity-40">·</span>
+          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFiles }}</strong> {{ $gettext('files') }}</span>
         </div>
-        <div>
-          <p class="text-role-on-surface-variant">{{ $gettext('Folders scanned') }}</p>
-          <p class="ext:font-medium">{{ scannedFolders }}</p>
-        </div>
-        <div>
-          <p class="text-role-on-surface-variant">{{ $gettext('Files scanned') }}</p>
-          <p class="ext:font-medium">{{ scannedFiles }}</p>
-        </div>
-        <div>
-          <p class="text-role-on-surface-variant">{{ $gettext('Duplicate groups') }}</p>
-          <p class="ext:font-medium">{{ duplicateGroupCount }}</p>
-        </div>
-        <div>
-          <p class="text-role-on-surface-variant">{{ $gettext('Duplicate copies') }}</p>
-          <p class="ext:font-medium">{{ duplicateFileCount }}</p>
+        <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-x-2">
+          <span class="ext:font-medium">{{ $gettext('Found:') }}</span>
+          <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateGroupCount }}</strong> {{ $gettext('groups') }}</span>
+          <span class="ext:opacity-40">·</span>
+          <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateFileCount }}</strong> {{ $gettext('copies') }}</span>
         </div>
       </div>
 
@@ -257,9 +255,12 @@ const toggleEntrySelection = (entryId: string) => {
 
       <section
       v-if="!isScanning && !duplicates.length"
-      class="dedupe-soft-border bg-role-surface ext:rounded-lg ext:p-4 ext:text-sm text-role-on-surface-variant ext:shadow-sm"
+      class="dedupe-soft-border bg-role-surface ext:rounded-lg ext:p-8 ext:shadow-sm ext:flex ext:flex-col ext:items-center ext:gap-3"
     >
-      {{ $gettext('No duplicate groups found yet. Start a scan to find duplicates.') }}
+      <oc-icon name="file-copy-2" fill-type="line" size="xlarge" class="text-role-on-surface-variant" />
+      <p class="ext:text-sm text-role-on-surface-variant ext:text-center">
+        {{ $gettext('No duplicate groups found yet. Start a scan to find duplicates.') }}
+      </p>
       </section>
 
       <section
@@ -270,8 +271,8 @@ const toggleEntrySelection = (entryId: string) => {
       <header class="dedupe-header-surface ext:px-4 ext:py-2 ext:border-b dedupe-soft-divider">
         <div class="dedupe-group-title ext:flex ext:flex-wrap ext:items-center ext:gap-3 ext:text-sm">
           <strong>{{ group.files.length }} {{ $gettext('copies') }}</strong>
-          <span class="dedupe-group-meta">{{ group.checksumAlgorithm }}</span>
-          <code class="ext:text-xs ext:break-all">{{ group.checksum }}</code>
+          <span class="dedupe-algo-badge">{{ group.checksumAlgorithm }}</span>
+          <code class="dedupe-checksum-chip ext:break-all">{{ group.checksum }}</code>
         </div>
       </header>
 
@@ -299,7 +300,7 @@ const toggleEntrySelection = (entryId: string) => {
             <tr
               v-for="entry in group.files"
               :key="entry.entryId"
-              class="dedupe-row ext:border-t dedupe-soft-divider"
+              :class="['dedupe-row ext:border-t dedupe-soft-divider', { 'dedupe-row-selected': !!selectedEntries[entry.entryId] }]"
               @click="toggleEntrySelection(entry.entryId)"
             >
               <td class="ext:pl-4 ext:pr-2 ext:py-2">
@@ -323,6 +324,7 @@ const toggleEntrySelection = (entryId: string) => {
                   :href="getOpenLocationUrl(entry)"
                   target="_blank"
                   appearance="raw"
+                  no-hover
                   :aria-label="$gettext('Open folder')"
                   class="ext:p-1"
                   @click.stop
@@ -348,16 +350,35 @@ const toggleEntrySelection = (entryId: string) => {
   border-color: var(--oc-role-outline-variant, var(--oc-role-outline));
 }
 
+.dedupe-title {
+  color: var(--oc-role-primary);
+}
+
 .dedupe-header-surface {
-  background-color: color-mix(in srgb, var(--oc-role-secondary-container) 75%, transparent);
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 25%, transparent);
 }
 
 .dedupe-group-title {
   color: var(--oc-role-on-surface);
 }
 
-.dedupe-group-meta {
+.dedupe-algo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: transparent;
   color: var(--oc-role-on-surface-variant);
+  border: 1px solid var(--oc-role-outline-variant, var(--oc-role-outline));
+}
+
+.dedupe-checksum-chip {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 15%, transparent);
 }
 
 .dedupe-table-head-surface {
@@ -369,10 +390,27 @@ const toggleEntrySelection = (entryId: string) => {
 }
 
 .dedupe-row:hover > td {
-  background-color: color-mix(in srgb, var(--oc-role-secondary-container) 40%, transparent);
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 25%, transparent);
+}
+
+.dedupe-row-selected > td {
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 35%, transparent);
+}
+
+.dedupe-row-selected:hover > td {
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 45%, transparent);
+}
+
+.dedupe-delete-btn:not(:disabled) {
+  border-color: var(--oc-role-error);
+  color: var(--oc-role-error);
 }
 
 :global([data-theme='dark']) .dedupe-row:hover > td {
-  background-color: var(--oc-role-surface-container-highest, var(--oc-role-surface-container-high));
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 20%, transparent);
+}
+
+:global([data-theme='dark']) .dedupe-row-selected > td {
+  background-color: color-mix(in srgb, var(--oc-role-primary-container) 30%, transparent);
 }
 </style>
