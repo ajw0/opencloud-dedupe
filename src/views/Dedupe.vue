@@ -23,9 +23,11 @@ const {
   scannedSpaces,
   scannedFolders,
   scannedFiles,
+  scannedFilesSize,
   duplicates,
   duplicateGroupCount,
   duplicateFileCount,
+  totalWastedSpace,
   scan,
   stop,
   deleteDuplicates
@@ -43,6 +45,14 @@ const formatFileSize = (bytes: number | string | undefined): string => {
     unitIndex++
   }
   return `${unitIndex === 0 ? size : size.toFixed(1)} ${units[unitIndex]}`
+}
+
+const getGroupWastedSpace = (group: DuplicateGroup): number => {
+  const fileSize = group.files[0]?.resource.size
+  if (fileSize === undefined || fileSize === null) return 0
+  const numBytes = typeof fileSize === 'string' ? parseInt(fileSize, 10) : fileSize
+  if (isNaN(numBytes)) return 0
+  return numBytes * (group.files.length - 1)
 }
 
 const selectedEntries = ref<Record<string, boolean>>({})
@@ -207,43 +217,49 @@ const toggleEntrySelection = (entryId: string) => {
       </p>
       </header>
 
-      <section class="dedupe-soft-border bg-role-surface ext:rounded-lg ext:p-4 ext:space-y-3 ext:shadow-sm">
-      <div class="ext:flex ext:flex-wrap ext:gap-2">
-        <oc-button appearance="filled" :disabled="isScanning || isDeleting" @click="startScan">
-          <span>{{ $gettext('Scan') }}</span>
-        </oc-button>
+      <section class="dedupe-toolbar dedupe-soft-border bg-role-surface ext:rounded-lg ext:p-4 ext:space-y-3 ext:shadow-sm">
+      <div class="ext:flex ext:flex-wrap ext:items-center ext:justify-between ext:gap-3">
+        <div class="ext:flex ext:flex-wrap ext:gap-2">
+          <oc-button appearance="filled" :disabled="isScanning || isDeleting" @click="startScan">
+            <span>{{ $gettext('Scan') }}</span>
+          </oc-button>
 
-        <oc-button appearance="outline" :disabled="!isScanning || isStopping" @click="stopScan">
-          <span>{{ $gettext('Stop') }}</span>
-        </oc-button>
+          <oc-button appearance="outline" :disabled="!isScanning || isStopping" @click="stopScan">
+            <span>{{ $gettext('Stop') }}</span>
+          </oc-button>
 
-        <oc-button appearance="outline" class="dedupe-delete-btn" :disabled="!canDelete || isScanning" @click="removeSelectedDuplicates">
-          <span>{{ $gettext('Delete selected') }}</span>
-        </oc-button>
+          <oc-button appearance="outline" class="dedupe-delete-btn" :disabled="!canDelete || isScanning" @click="removeSelectedDuplicates">
+            <span>{{ $gettext('Delete selected') }}</span>
+          </oc-button>
+        </div>
+
+        <div
+          v-if="scannedFiles > 0 || isScanning"
+          class="ext:flex ext:flex-col ext:gap-y-1 ext:text-sm text-role-on-surface-variant ext:text-left md:ext:text-right"
+          aria-live="polite"
+        >
+          <div class="ext:flex ext:flex-wrap ext:items-center ext:justify-start md:ext:justify-end ext:gap-x-2">
+            <span class="ext:font-bold">{{ $gettext('Scanned:') }}</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ scannedSpaces }}</strong> {{ $gettext('spaces') }}</span>
+            <span class="ext:opacity-40">·</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFolders }}</strong> {{ $gettext('folders') }}</span>
+            <span class="ext:opacity-40">·</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFiles }}</strong> {{ $gettext('files') }}</span>
+            <span class="ext:opacity-40">·</span>
+            <strong class="ext:font-medium text-role-on-surface">{{ formatFileSize(scannedFilesSize) }}</strong>
+          </div>
+          <div class="ext:flex ext:flex-wrap ext:items-center ext:justify-start md:ext:justify-end ext:gap-x-2">
+            <span class="ext:font-bold">{{ $gettext('Found:') }}</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateGroupCount }}</strong> {{ $gettext('groups') }}</span>
+            <span class="ext:opacity-40">·</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateFileCount }}</strong> {{ $gettext('copies') }}</span>
+            <span class="ext:opacity-40">·</span>
+            <span><strong class="ext:font-medium text-role-on-surface">{{ formatFileSize(totalWastedSpace) }}</strong> {{ $gettext('reclaimable') }}</span>
+          </div>
+        </div>
       </div>
 
       <oc-progress v-if="isScanning" :indeterminate="true" :aria-label="$gettext('Scanning')" />
-
-      <div
-        v-if="scannedFiles > 0 || isScanning"
-        class="ext:flex ext:flex-col ext:gap-y-1 ext:text-sm text-role-on-surface-variant"
-        aria-live="polite"
-      >
-        <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-x-2">
-          <span class="ext:font-medium">{{ $gettext('Scanned:') }}</span>
-          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedSpaces }}</strong> {{ $gettext('spaces') }}</span>
-          <span class="ext:opacity-40">·</span>
-          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFolders }}</strong> {{ $gettext('folders') }}</span>
-          <span class="ext:opacity-40">·</span>
-          <span><strong class="ext:font-medium text-role-on-surface">{{ scannedFiles }}</strong> {{ $gettext('files') }}</span>
-        </div>
-        <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-x-2">
-          <span class="ext:font-medium">{{ $gettext('Found:') }}</span>
-          <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateGroupCount }}</strong> {{ $gettext('groups') }}</span>
-          <span class="ext:opacity-40">·</span>
-          <span><strong class="ext:font-medium text-role-on-surface">{{ duplicateFileCount }}</strong> {{ $gettext('copies') }}</span>
-        </div>
-      </div>
 
       <p v-if="isStopping" class="ext:text-sm text-role-on-surface-variant">
         {{ $gettext('Stopping scan...') }}
@@ -271,8 +287,8 @@ const toggleEntrySelection = (entryId: string) => {
       <header class="dedupe-header-surface ext:px-4 ext:py-2 ext:border-b dedupe-soft-divider">
         <div class="dedupe-group-title ext:flex ext:flex-wrap ext:items-center ext:gap-3 ext:text-sm">
           <strong>{{ group.files.length }} {{ $gettext('copies') }}</strong>
-          <span class="dedupe-algo-badge">{{ group.checksumAlgorithm }}</span>
-          <code class="dedupe-checksum-chip ext:break-all">{{ group.checksum }}</code>
+          <code class="dedupe-checksum-chip ext:break-all ext:mx-auto" :title="group.checksumAlgorithm">{{ group.checksum }}</code>
+          <strong :title="$gettext('Reclaimable space')">{{ formatFileSize(getGroupWastedSpace(group)) }}</strong>
         </div>
       </header>
 
@@ -352,6 +368,15 @@ const toggleEntrySelection = (entryId: string) => {
 
 .dedupe-title {
   color: var(--oc-role-primary);
+}
+
+.dedupe-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: color-mix(in srgb, var(--oc-role-surface) 90%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--oc-role-outline) 15%, transparent);
 }
 
 .dedupe-header-surface {
