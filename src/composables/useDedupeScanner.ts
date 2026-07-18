@@ -47,6 +47,7 @@ export const useDedupeScanner = () => {
   const scannedSpaces = ref(0)
   const scannedFolders = ref(0)
   const scannedFiles = ref(0)
+  const scannedFilesSize = ref(0)
   const duplicates = ref<DuplicateGroup[]>([])
 
   let abortController: AbortController | null = null
@@ -55,11 +56,21 @@ export const useDedupeScanner = () => {
   const duplicateFileCount = computed(() => {
     return duplicates.value.reduce((count, group) => count + group.files.length, 0)
   })
+  const totalWastedSpace = computed(() => {
+    return duplicates.value.reduce((total, group) => {
+      const fileSize = group.files[0]?.resource.size
+      if (fileSize === undefined || fileSize === null) return total
+      const numBytes = typeof fileSize === 'string' ? parseInt(fileSize, 10) : fileSize
+      if (isNaN(numBytes)) return total
+      return total + numBytes * (group.files.length - 1)
+    }, 0)
+  })
 
   const setIdleCounters = () => {
     scannedSpaces.value = 0
     scannedFolders.value = 0
     scannedFiles.value = 0
+    scannedFilesSize.value = 0
   }
 
   const buildEntryId = (space: SpaceResource, resource: Resource) => {
@@ -133,6 +144,13 @@ export const useDedupeScanner = () => {
         }
 
         scannedFiles.value += 1
+        const fileSize = child.size
+        if (fileSize !== undefined && fileSize !== null) {
+          const numBytes = typeof fileSize === 'string' ? parseInt(fileSize, 10) : fileSize
+          if (!isNaN(numBytes)) {
+            scannedFilesSize.value += numBytes
+          }
+        }
         const preferredChecksum = pickPreferredChecksum(
           child.extraProps?.[CHECKSUM_DAV_PROP] ?? child.extraProps?.checksums
         )
@@ -299,9 +317,11 @@ export const useDedupeScanner = () => {
     scannedSpaces,
     scannedFolders,
     scannedFiles,
+    scannedFilesSize,
     duplicates,
     duplicateGroupCount,
     duplicateFileCount,
+    totalWastedSpace,
     scan,
     stop,
     deleteDuplicates
